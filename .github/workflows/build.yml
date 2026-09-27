@@ -202,6 +202,25 @@ jobs:
           retention-days: 30
           compression-level: 0
 
+      - name: Publish GitHub Release
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: 360t7-${{ github.run_number }}-${{ github.sha }}
+          name: ImmortalWrt 360T7 #${{ github.run_number }}
+          body: |
+            ImmortalWrt 25.12 / Qihoo 360 T7 firmware
+
+            - Build run: #${{ github.run_number }}
+            - Commit: ${{ github.sha }}
+            - Target: mediatek/filogic/qihoo_360t7
+            - Daed + luci-app-daede + MosDNS + Tailscale
+          files: artifacts/*
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Summary
         if: always()
         run: |
