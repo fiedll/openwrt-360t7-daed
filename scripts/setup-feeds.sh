@@ -35,12 +35,26 @@ echo "=== Updating feeds ==="
 ./scripts/feeds update -a
 
 echo "=== Installing Daed packages ==="
-./scripts/feeds install dae daed luci-app-daede
+# ImmortalWrt master already contains dae/daed in the normal packages feed.
+# Force these three packages to come from the dedicated daede feed so that
+# all Daed components use the same source and the validation paths are stable.
+./scripts/feeds install -p daede dae daed luci-app-daede
 
 echo "=== Preparing MosDNS v5 ==="
-rm -rf   feeds/packages/net/mosdns   package/feeds/packages/mosdns   package/mosdns   package/luci-app-mosdns   package/geo2txt   /tmp/luci-app-mosdns
+rm -rf \
+  feeds/packages/net/mosdns \
+  package/feeds/packages/mosdns \
+  package/mosdns \
+  package/luci-app-mosdns \
+  package/geo2txt \
+  /tmp/luci-app-mosdns
 
-git clone   --depth 1   --single-branch   --branch v5   https://github.com/sbwml/luci-app-mosdns   /tmp/luci-app-mosdns
+git clone \
+  --depth 1 \
+  --single-branch \
+  --branch v5 \
+  https://github.com/sbwml/luci-app-mosdns \
+  /tmp/luci-app-mosdns
 
 mkdir -p package/mosdns package/luci-app-mosdns package/geo2txt
 cp -a /tmp/luci-app-mosdns/mosdns/. package/mosdns/
@@ -51,9 +65,16 @@ fi
 rm -rf /tmp/luci-app-mosdns
 
 echo "=== Preparing v2ray geodata ==="
-rm -rf   feeds/packages/net/v2ray-geodata   package/feeds/packages/v2ray-geodata   package/v2ray-geodata
+rm -rf \
+  feeds/packages/net/v2ray-geodata \
+  package/feeds/packages/v2ray-geodata \
+  package/v2ray-geodata
 
-git clone   --depth 1   --single-branch   https://github.com/sbwml/v2ray-geodata   package/v2ray-geodata
+git clone \
+  --depth 1 \
+  --single-branch \
+  https://github.com/sbwml/v2ray-geodata \
+  package/v2ray-geodata
 
 echo "=== Installing Tailscale from the normal packages feed ==="
 ./scripts/feeds install tailscale
