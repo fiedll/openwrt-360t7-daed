@@ -22,6 +22,19 @@ echo "=========================================="
 echo "  Updating ImmortalWrt 25.12 feeds"
 echo "=========================================="
 
+# ImmortalWrt 25.12 enables the OpenWrt video feed by default. The video
+# repository is not needed on 360T7 and its APK index can intermittently be
+# truncated, making apk update fail with wget error 8 / unexpected EOF.
+# Disable the feed at build time so no video/packages.adb entry is generated
+# into /etc/apk/repositories.d/distfeeds.list in the final firmware.
+if grep -q "^src-git video " feeds.conf; then
+  sed -i 's/^src-git video /# disabled: src-git video /' feeds.conf
+fi
+if grep -q "^src-git video " feeds.conf; then
+  echo "ERROR: video feed is still enabled"
+  exit 1
+fi
+
 # Remove stale custom feed entries before adding our dedicated Daed feed.
 sed -i '/openwrt-daede/d' feeds.conf 2>/dev/null || true
 sed -i '/sbwml\/luci-app-mosdns/d' feeds.conf 2>/dev/null || true
@@ -35,7 +48,6 @@ FEED
 
 echo "=== feeds.conf ==="
 cat feeds.conf
-
 echo "=== Updating feeds ==="
 ./scripts/feeds update -a
 
@@ -97,7 +109,6 @@ git clone --depth 1 --single-branch \
 
 echo "=== Installing Tailscale from the standard packages feed ==="
 ./scripts/feeds install tailscale
-
 echo "=== Validating required package sources ==="
 checks=(
   "package/feeds/daede/dae/Makefile"
