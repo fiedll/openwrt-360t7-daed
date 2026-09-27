@@ -60,7 +60,7 @@ CONFIG_PACKAGE_mosdns=y
 CONFIG_PACKAGE_luci-app-mosdns=y
 CONFIG_PACKAGE_geo2txt=y
 
-# Tailscale
+# Tailscale — use the native ImmortalWrt/OpenWrt packages feed
 CONFIG_PACKAGE_tailscale=y
 CONFIG_PACKAGE_kmod-tun=y
 
