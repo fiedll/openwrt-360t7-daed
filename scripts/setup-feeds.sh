@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup-feeds.sh — Prepare Daed + MosDNS v5 + Tailscale packages
+# setup-feeds.sh — Prepare stable Daed + MosDNS v5 + Tailscale packages
 set -euo pipefail
 
 OPENWRT_DIR="${1:-$(pwd)}"
@@ -13,16 +13,16 @@ fi
 cd "$OPENWRT_DIR"
 
 echo "=========================================="
-echo "  Updating OpenWrt feeds"
+echo "  Updating ImmortalWrt 25.12 feeds"
 echo "=========================================="
 
-# Keep the normal ImmortalWrt feeds. Daed is added as a dedicated feed;
-# MosDNS and v2ray-geodata are installed directly from their upstream
-# repositories because this is the layout recommended by sbwml/luci-app-mosdns v5.
+# Remove stale custom feed entries before adding our dedicated Daed feed.
 sed -i '/openwrt-daede/d' feeds.conf 2>/dev/null || true
 sed -i '/sbwml\/luci-app-mosdns/d' feeds.conf 2>/dev/null || true
 sed -i '/sbwml\/v2ray-geodata/d' feeds.conf 2>/dev/null || true
 sed -i '/openwrt\/packages/d' feeds.conf 2>/dev/null || true
+sed -i '/immortalwrt\/packages/d' feeds.conf 2>/dev/null || true
+sed -i '/^src-git daede /d' feeds.conf 2>/dev/null || true
 
 cat >> feeds.conf <<'FEED'
 src-git daede https://github.com/kenzok8/openwrt-daede.git;main
@@ -34,10 +34,7 @@ cat feeds.conf
 echo "=== Updating feeds ==="
 ./scripts/feeds update -a
 
-echo "=== Installing Daed packages ==="
-# ImmortalWrt master already contains dae/daed in the normal packages feed.
-# Force these three packages to come from the dedicated daede feed so that
-# all Daed components use the same source and the validation paths are stable.
+echo "=== Installing Daed packages from dedicated feed ==="
 ./scripts/feeds install -p daede dae daed luci-app-daede
 
 echo "=== Preparing MosDNS v5 ==="
@@ -49,10 +46,7 @@ rm -rf \
   package/geo2txt \
   /tmp/luci-app-mosdns
 
-git clone \
-  --depth 1 \
-  --single-branch \
-  --branch v5 \
+git clone --depth 1 --single-branch --branch v5 \
   https://github.com/sbwml/luci-app-mosdns \
   /tmp/luci-app-mosdns
 
@@ -65,21 +59,16 @@ fi
 rm -rf /tmp/luci-app-mosdns
 
 echo "=== Preparing v2ray geodata ==="
-rm -rf \
-  feeds/packages/net/v2ray-geodata \
-  package/feeds/packages/v2ray-geodata \
-  package/v2ray-geodata
+rm -rf feeds/packages/net/v2ray-geodata package/feeds/packages/v2ray-geodata package/v2ray-geodata
 
-git clone \
-  --depth 1 \
-  --single-branch \
+git clone --depth 1 --single-branch \
   https://github.com/sbwml/v2ray-geodata \
   package/v2ray-geodata
 
-echo "=== Installing Tailscale from the normal packages feed ==="
+echo "=== Installing Tailscale from the standard packages feed ==="
 ./scripts/feeds install tailscale
 
-echo "=== Validating packages ==="
+echo "=== Validating required package sources ==="
 checks=(
   "package/feeds/daede/dae/Makefile"
   "package/feeds/daede/daed/Makefile"
@@ -87,7 +76,6 @@ checks=(
   "package/mosdns/Makefile"
   "package/luci-app-mosdns/Makefile"
   "package/geo2txt/Makefile"
-  "package/v2ray-geodata/Makefile"
   "package/v2ray-geodata/Makefile"
   "feeds/packages/net/tailscale/Makefile"
 )
