@@ -88,8 +88,7 @@ checks=(
   "package/luci-app-mosdns/Makefile"
   "package/geo2txt/Makefile"
   "package/v2ray-geodata/Makefile"
-  "package/v2ray-geodata/v2ray-geoip/Makefile"
-  "package/v2ray-geodata/v2ray-geosite/Makefile"
+  "package/v2ray-geodata/Makefile"
   "feeds/packages/net/tailscale/Makefile"
 )
 
