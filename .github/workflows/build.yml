@@ -11,7 +11,7 @@ on:
 
 env:
   IMM_REPO: https://github.com/immortalwrt/immortalwrt.git
-  IMM_BRANCH: master
+  IMM_BRANCH: openwrt-25.12
   TARGET: mediatek
   SUBTARGET: filogic
 
@@ -103,44 +103,61 @@ jobs:
           cat ${{ github.workspace }}/config/360t7.seed >> .config
           make defconfig
 
-      - name: Verify config — FAIL if packages missing
+      - name: Verify core config
         run: |
           cd openwrt
           FAIL=0
-          echo "=== Target ==="
-          grep -q "CONFIG_TARGET_mediatek_filogic_DEVICE_qihoo_360t7=y" .config || { echo "❌ Target missing!"; FAIL=1; }
-          echo "=== Chinese i18n ==="
-          grep -q "CONFIG_LUCI_LANG_zh_Hans=y" .config || { echo "❌ Chinese language missing!"; FAIL=1; }
-          echo "=== argon ==="
-          grep -q "CONFIG_PACKAGE_luci-theme-argon=y" .config || { echo "❌ argon theme missing!"; FAIL=1; }
-          echo "=== statistics ==="
-          grep -q "CONFIG_PACKAGE_luci-app-statistics=y" .config || { echo "❌ statistics missing!"; FAIL=1; }
-          echo "=== adblock-fast ==="
-          grep -q "CONFIG_PACKAGE_luci-app-adblock-fast=y" .config || { echo "❌ adblock-fast missing!"; FAIL=1; }
-          echo "=== daed ==="
-          grep -q "CONFIG_PACKAGE_daed=y" .config || { echo "❌ daed missing!"; FAIL=1; }
-          echo "=== dae ==="
-          grep -q "CONFIG_PACKAGE_dae=y" .config || { echo "❌ dae missing!"; FAIL=1; }
-          echo "=== MosDNS ==="
-          grep -q "CONFIG_PACKAGE_mosdns=y" .config || { echo "❌ mosdns missing!"; FAIL=1; }
-          grep -q "CONFIG_PACKAGE_luci-app-mosdns=y" .config || { echo "❌ luci-app-mosdns missing!"; FAIL=1; }
-          echo "=== Tailscale ==="
-          grep -q "CONFIG_PACKAGE_tailscale=y" .config || { echo "❌ tailscale missing!"; FAIL=1; }
-          grep -q "CONFIG_PACKAGE_kmod-tun=y" .config || { echo "❌ kmod-tun missing!"; FAIL=1; }
-          echo "=== BTF kernel ==="
-          grep -rq "CONFIG_DEBUG_INFO=y" target/linux/*/config-* 2>/dev/null || echo "⚠️ CONFIG_DEBUG_INFO not in kernel config"
-          grep -rq "CONFIG_DEBUG_INFO_BTF=y" target/linux/*/config-* 2>/dev/null || echo "⚠️ CONFIG_DEBUG_INFO_BTF not in kernel config"
+          required=(
+            "CONFIG_TARGET_mediatek_filogic_DEVICE_qihoo_360t7=y"
+            "CONFIG_LUCI_LANG_zh_Hans=y"
+            "CONFIG_PACKAGE_daed=y"
+            "CONFIG_PACKAGE_dae=y"
+            "CONFIG_PACKAGE_luci-app-daede=y"
+            "CONFIG_PACKAGE_mosdns=y"
+            "CONFIG_PACKAGE_luci-app-mosdns=y"
+            "CONFIG_PACKAGE_geo2txt=y"
+            "CONFIG_PACKAGE_v2ray-geoip=y"
+            "CONFIG_PACKAGE_v2ray-geosite=y"
+            "CONFIG_PACKAGE_tailscale=y"
+            "CONFIG_PACKAGE_kmod-tun=y"
+          )
+
+          echo "=== Core package configuration ==="
+          for item in "${required[@]}"; do
+            if grep -qx "$item" .config; then
+              echo "✓ $item"
+            else
+              echo "❌ $item"
+              FAIL=1
+            fi
+          done
+
+          echo "=== BTF/BPF kernel configuration ==="
+          for item in             "CONFIG_DEBUG_INFO=y"             "CONFIG_DEBUG_INFO_BTF=y"             "CONFIG_BPF=y"             "CONFIG_BPF_SYSCALL=y"             "CONFIG_CGROUP_BPF=y"; do
+            if grep -rqx "$item" target/linux/*/config-* 2>/dev/null; then
+              echo "✓ $item"
+            else
+              echo "❌ $item"
+              FAIL=1
+            fi
+          done
+
           echo "=== Pre-config files ==="
-          [ -f files/etc/config/wireless ] && echo "✓ wireless" || echo "❌ wireless missing"
-          [ -f files/etc/config/daed ] && echo "✓ daed" || echo "❌ daed config missing"
-          [ -f files/etc/daed/wing.db ] && echo "✓ wing.db" || echo "❌ wing.db missing"
-          echo "=== Summary ==="
-          [ $FAIL -eq 0 ] && echo "✅ All packages verified" || { echo "❌ Some packages missing — aborting build"; exit 1; }
+          [ -f files/etc/config/wireless ] && echo "✓ wireless" || { echo "❌ wireless missing"; FAIL=1; }
+          [ -f files/etc/config/daed ] && echo "✓ daed" || { echo "❌ daed config missing"; FAIL=1; }
+          [ -f files/etc/daed/wing.db ] && echo "✓ wing.db" || { echo "❌ wing.db missing"; FAIL=1; }
+
+          if [ "$FAIL" -ne 0 ]; then
+            echo "=== Relevant final .config entries ==="
+            grep -E '^#? CONFIG_PACKAGE_(daed|dae|luci-app-daede|mosdns|luci-app-mosdns|geo2txt|v2ray-geoip|v2ray-geosite|tailscale|kmod-tun)=' .config || true
+            exit 1
+          fi
+          echo "✅ Core 360T7 configuration verified"
 
       - name: Download sources
         run: |
           cd openwrt
-          make download -j$(nproc) 2>&1 | tail -20 || true
+          make download -j"$(nproc)"
 
       - name: Build firmware
         run: |
