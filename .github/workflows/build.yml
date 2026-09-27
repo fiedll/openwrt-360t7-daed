@@ -19,6 +19,9 @@ concurrency:
   group: build-360t7
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build ImmortalWrt 360T7
