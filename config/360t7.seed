@@ -1,19 +1,15 @@
-# ┌─────────────────────────────────────────────────────────────┐
-# │      360T7 Custom Firmware — Complete Package Selection      │
-# │      daed 刷机后通过 apk add 安装                              │
-# └─────────────────────────────────────────────────────────────┘
+# 360T7 Custom Firmware — Daed + MosDNS + Tailscale
 
-# ═══════════ 中文语言支持 (必须使用此配置项) ═══════════
 CONFIG_LUCI_LANG_zh_Hans=y
 
-# ═══════════ 网络加速 ═══════════
+# Network acceleration
 CONFIG_PACKAGE_kmod-tcp-bbr=y
 
-# ═══════════ luci-theme-argon — 主题 ═══════════
+# Argon
 CONFIG_PACKAGE_luci-theme-argon=y
 CONFIG_PACKAGE_luci-app-argon-config=y
 
-# ═══════════ luci-app-statistics — 监控 ═══════════
+# Statistics
 CONFIG_PACKAGE_luci-app-statistics=y
 CONFIG_PACKAGE_collectd-mod-cpu=y
 CONFIG_PACKAGE_collectd-mod-interface=y
@@ -28,10 +24,10 @@ CONFIG_PACKAGE_collectd-mod-conntrack=y
 CONFIG_PACKAGE_collectd-mod-rrdtool=y
 CONFIG_PACKAGE_rrdcgi=y
 
-# ═══════════ luci-app-adblock-fast — 广告过滤 ═══════════
+# Adblock
 CONFIG_PACKAGE_luci-app-adblock-fast=y
 
-# ═══════════ 基础系统 ═══════════
+# Base system
 CONFIG_PACKAGE_luci=y
 CONFIG_PACKAGE_odhcp6c=y
 CONFIG_PACKAGE_odhcpd-ipv6only=y
@@ -46,12 +42,40 @@ CONFIG_PACKAGE_htop=y
 CONFIG_PACKAGE_nano=y
 CONFIG_PACKAGE_tcpdump=y
 
-# ═══════════ daed 内核依赖（刷机后 apk add daed 需要） ═══════════
+# Daed / dae
+CONFIG_PACKAGE_daed=y
+CONFIG_PACKAGE_dae=y
+CONFIG_PACKAGE_luci-app-daede=y
+CONFIG_PACKAGE_daed_DAED_USE_KERNEL_BTF=y
 CONFIG_PACKAGE_ca-bundle=y
 CONFIG_PACKAGE_kmod-sched-core=y
 CONFIG_PACKAGE_kmod-sched-bpf=y
 CONFIG_PACKAGE_kmod-veth=y
 CONFIG_PACKAGE_kmod-xdp-sockets-diag=y
+CONFIG_PACKAGE_v2ray-geoip=y
+CONFIG_PACKAGE_v2ray-geosite=y
 
-# ═══════════ 时区 ═══════════
+# MosDNS v5
+CONFIG_PACKAGE_mosdns=y
+CONFIG_PACKAGE_luci-app-mosdns=y
+CONFIG_PACKAGE_geo2txt=y
+
+# Tailscale
+CONFIG_PACKAGE_tailscale=y
+CONFIG_PACKAGE_kmod-tun=y
+
+# eBPF / BTF
+CONFIG_DEVEL=y
+CONFIG_BPF_TOOLCHAIN_HOST=y
+CONFIG_KERNEL_BPF=y
+CONFIG_KERNEL_BPF_SYSCALL=y
+CONFIG_KERNEL_BPF_JIT=y
+CONFIG_KERNEL_BPF_EVENTS=y
+CONFIG_KERNEL_BPF_STREAM_PARSER=y
+CONFIG_KERNEL_CGROUP_BPF=y
+CONFIG_KERNEL_DEBUG_INFO=y
+CONFIG_KERNEL_DEBUG_INFO_BTF=y
+CONFIG_KERNEL_XDP_SOCKETS=y
+
+# Timezone
 CONFIG_PACKAGE_zoneinfo-asia-shanghai=y
