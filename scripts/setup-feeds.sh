@@ -12,6 +12,12 @@ fi
 
 cd "$OPENWRT_DIR"
 
+if ! grep -q "^src-git packages .*;openwrt-25.12$" feeds.conf; then
+  echo "ERROR: ImmortalWrt 25.12 packages feed is missing or not branch-pinned"
+  grep "^src-git packages " feeds.conf || true
+  exit 1
+fi
+
 echo "=========================================="
 echo "  Updating ImmortalWrt 25.12 feeds"
 echo "=========================================="
@@ -21,7 +27,6 @@ sed -i '/openwrt-daede/d' feeds.conf 2>/dev/null || true
 sed -i '/sbwml\/luci-app-mosdns/d' feeds.conf 2>/dev/null || true
 sed -i '/sbwml\/v2ray-geodata/d' feeds.conf 2>/dev/null || true
 sed -i '/openwrt\/packages/d' feeds.conf 2>/dev/null || true
-sed -i '/immortalwrt\/packages/d' feeds.conf 2>/dev/null || true
 sed -i '/^src-git daede /d' feeds.conf 2>/dev/null || true
 
 cat >> feeds.conf <<'FEED'
@@ -33,6 +38,9 @@ cat feeds.conf
 
 echo "=== Updating feeds ==="
 ./scripts/feeds update -a
+
+[ -f feeds/packages/net/tailscale/Makefile ] || { echo "ERROR: Tailscale package missing"; exit 1; }
+[ -f feeds/packages/lang/golang/golang/Makefile ] || { echo "ERROR: Go host package missing"; exit 1; }
 
 echo "=== Installing Daed packages from dedicated feed ==="
 ./scripts/feeds install -p daede dae daed luci-app-daede
