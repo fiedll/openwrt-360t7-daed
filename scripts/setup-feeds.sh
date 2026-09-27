@@ -54,7 +54,18 @@ echo "=== Installing standard feed packages ==="
 [ -f package/feeds/luci/luci-base/Makefile ] || { echo "ERROR: luci-base package missing after feeds install"; exit 1; }
 
 echo "=== Installing Daed packages from dedicated feed ==="
-./scripts/feeds install -p daede dae daed luci-app-daede
+# The current kenzok8/openwrt-daede feed contains dae/daed/luci-app-daede,
+# but scripts/feeds may omit the two Go packages on some 25.12 metadata
+# combinations. Link the package directories explicitly so the source tree
+# is deterministic and the packages are always visible to the build system.
+mkdir -p package/feeds/daede
+for pkg in dae daed luci-app-daede; do
+  rm -rf "package/feeds/daede/$pkg"
+  ln -s "../../../feeds/daede/$pkg" "package/feeds/daede/$pkg"
+done
+# We build against the kernel's integrated BTF; do not expose the optional
+# standalone vmlinux-btf package as a required build dependency.
+rm -rf package/feeds/daede/vmlinux-btf
 
 echo "=== Preparing MosDNS v5 ==="
 rm -rf \
