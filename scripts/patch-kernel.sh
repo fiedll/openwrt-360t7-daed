@@ -39,7 +39,7 @@ set_opt() {
 
 for item in \
   "CONFIG_DEBUG_INFO y" \
-  "CONFIG_DEBUG_INFO_REDUCED y" \
+  "CONFIG_DEBUG_INFO_REDUCED n" \
   "CONFIG_DEBUG_INFO_BTF y" \
   "CONFIG_DEBUG_INFO_BTF_MODULES y" \
   "CONFIG_BPF y" \
