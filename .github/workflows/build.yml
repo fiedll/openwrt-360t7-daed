@@ -79,7 +79,7 @@ jobs:
         run: |
           cd openwrt
           cp feeds.conf.default feeds.conf
-          bash ${{ github.workspace }}/scripts/setup-feeds.sh openwrt
+          bash ${{ github.workspace }}/scripts/setup-feeds.sh .
 
       - name: Copy pre-configured files into build tree
         run: |
