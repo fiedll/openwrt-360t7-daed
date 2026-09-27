@@ -42,6 +42,17 @@ echo "=== Updating feeds ==="
 [ -f feeds/packages/net/tailscale/Makefile ] || { echo "ERROR: Tailscale package missing"; exit 1; }
 [ -f feeds/packages/lang/golang/golang/Makefile ] || { echo "ERROR: Go host package missing"; exit 1; }
 
+# Install the standard feed packages first. ImmortalWrt 25.12 uses feed-provided
+# LuCI packages (including the virtual luci package required by default-settings).
+# Without this, CONFIG_PACKAGE_luci=y can survive defconfig but the final APK
+# package index has no luci package, causing package/install to fail.
+echo "=== Installing standard feed packages ==="
+./scripts/feeds install -a
+
+# Verify that the LuCI package tree is actually linked into package/.
+[ -f package/feeds/luci/luci/Makefile ] || { echo "ERROR: LuCI package missing after feeds install"; exit 1; }
+[ -f package/feeds/luci/luci-base/Makefile ] || { echo "ERROR: luci-base package missing after feeds install"; exit 1; }
+
 echo "=== Installing Daed packages from dedicated feed ==="
 ./scripts/feeds install -p daede dae daed luci-app-daede
 
