@@ -1,67 +1,66 @@
 #!/bin/bash
-# patch-kernel.sh — Patch kernel config for BTF + full BPF support
-# CRITICAL: CONFIG_DEBUG_INFO=y is required for CONFIG_DEBUG_INFO_BTF=y
+# patch-kernel.sh — Enable BTF/BPF options required by Daed
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 OPENWRT_DIR="${1:-openwrt}"
-[ -d "$OPENWRT_DIR" ] && cd "$OPENWRT_DIR" || { echo "Must run from project root or pass openwrt dir"; exit 1; }
+[ -d "$OPENWRT_DIR" ] && cd "$OPENWRT_DIR" || {
+  echo "Must run from project root or pass openwrt dir"
+  exit 1
+}
 
-# ── Detect kernel version from config filenames ──
 KVER=""
 for f in target/linux/generic/config-[0-9]*; do
+  [ -f "$f" ] || continue
   v=$(basename "$f" | sed 's/config-//')
   if [ -z "$KVER" ] || [ "$(printf '%s\n%s\n' "$KVER" "$v" | sort -V | tail -1)" = "$v" ]; then
     KVER="$v"
   fi
 done
-echo "Detected kernel config version: $KVER"
+
+[ -n "$KVER" ] || {
+  echo "ERROR: Cannot detect kernel config version"
+  exit 1
+}
 
 GENERIC_CONFIG="target/linux/generic/config-${KVER}"
-TARGET_CONFIG="target/linux/mediatek/config-${KVER}"
+echo "Detected kernel config version: $KVER"
+echo "Patching: $GENERIC_CONFIG"
 
 set_opt() {
   local f="$1" opt="$2" val="$3"
-  [ -f "$f" ] || touch "$f"
+  [ -f "$f" ] || {
+    echo "ERROR: Kernel config not found: $f"
+    exit 1
+  }
   sed -i "/^${opt}[= ]/d; /^# ${opt} is not set/d" "$f"
   echo "${opt}=${val}" >> "$f"
-  echo "  ✓ ${opt}=${val} → ${f}"
 }
 
-echo ""
-echo "=== DEBUG INFO (required for BTF) ==="
-set_opt "$GENERIC_CONFIG" "CONFIG_DEBUG_INFO" "y"
-set_opt "$GENERIC_CONFIG" "CONFIG_DEBUG_INFO_REDUCED" "y"
+for item in \
+  "CONFIG_DEBUG_INFO y" \
+  "CONFIG_DEBUG_INFO_REDUCED y" \
+  "CONFIG_DEBUG_INFO_BTF y" \
+  "CONFIG_DEBUG_INFO_BTF_MODULES y" \
+  "CONFIG_BPF y" \
+  "CONFIG_BPF_SYSCALL y" \
+  "CONFIG_BPF_JIT y" \
+  "CONFIG_BPF_JIT_ALWAYS_ON y" \
+  "CONFIG_BPF_EVENTS y" \
+  "CONFIG_BPF_STREAM_PARSER y" \
+  "CONFIG_CGROUP_BPF y" \
+  "CONFIG_NET_CLS_BPF m" \
+  "CONFIG_NET_ACT_BPF m" \
+  "CONFIG_NET_SCH_INGRESS m" \
+  "CONFIG_XDP_SOCKETS y" \
+  "CONFIG_XDP_SOCKETS_DIAG m" \
+  "CONFIG_VETH m"
+do
+  set -- $item
+  set_opt "$GENERIC_CONFIG" "$1" "$2"
+done
 
-echo ""
-echo "=== BTF ==="
-set_opt "$GENERIC_CONFIG" "CONFIG_DEBUG_INFO_BTF" "y"
-set_opt "$GENERIC_CONFIG" "CONFIG_DEBUG_INFO_BTF_MODULES" "y"
+echo "=== Final BTF/BPF options ==="
+grep -E '^(CONFIG_(DEBUG_INFO|BPF|CGROUP_BPF|NET_CLS_BPF|NET_ACT_BPF|NET_SCH_INGRESS|XDP_SOCKETS|VETH))=' "$GENERIC_CONFIG" | sort
 
-echo ""
-echo "=== BPF core ==="
-set_opt "$GENERIC_CONFIG" "CONFIG_BPF" "y"
-set_opt "$GENERIC_CONFIG" "CONFIG_BPF_SYSCALL" "y"
-set_opt "$GENERIC_CONFIG" "CONFIG_BPF_JIT" "y"
-set_opt "$GENERIC_CONFIG" "CONFIG_BPF_JIT_ALWAYS_ON" "y"
-
-echo ""
-echo "=== BPF features ==="
-set_opt "$GENERIC_CONFIG" "CONFIG_BPF_EVENTS" "y"
-set_opt "$GENERIC_CONFIG" "CONFIG_BPF_STREAM_PARSER" "y"
-set_opt "$GENERIC_CONFIG" "CONFIG_CGROUP_BPF" "y"
-
-echo ""
-echo "=== Networking BPF ==="
-set_opt "$GENERIC_CONFIG" "CONFIG_NET_CLS_BPF" "m"
-set_opt "$GENERIC_CONFIG" "CONFIG_NET_ACT_BPF" "m"
-set_opt "$GENERIC_CONFIG" "CONFIG_NET_SCH_INGRESS" "m"
-
-echo ""
-echo "=== XDP + veth ==="
-set_opt "$GENERIC_CONFIG" "CONFIG_XDP_SOCKETS" "y"
-set_opt "$GENERIC_CONFIG" "CONFIG_XDP_SOCKETS_DIAG" "m"
-set_opt "$GENERIC_CONFIG" "CONFIG_VETH" "m"
-
-echo ""
-echo "=== Done — BTF + BPF fully configured ==="
+echo "=== BTF/BPF patch completed ==="
