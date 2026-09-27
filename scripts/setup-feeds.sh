@@ -1,9 +1,7 @@
 #!/bin/bash
-# setup-feeds.sh — Add kenzok8/openwrt-daede as custom feed
-# This provides dae (performance-optimized) + daed (web panel) + luci-app-daede (unified LuCI)
+# setup-feeds.sh — Add custom package feeds for 360T7
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 OPENWRT_DIR="${1:-$(pwd)}"
 
 if [ ! -f "$OPENWRT_DIR/feeds.conf.default" ]; then
@@ -15,43 +13,34 @@ fi
 cd "$OPENWRT_DIR"
 
 echo "=========================================="
-echo "  Adding kenzok8/openwrt-daede feed"
+echo "  Adding custom feeds"
 echo "=========================================="
 
-# Remove old daede feed entry if exists
 sed -i '/openwrt-daede/d' feeds.conf 2>/dev/null || true
+sed -i '/sbwml\/luci-app-mosdns/d' feeds.conf 2>/dev/null || true
+sed -i '/sbwml\/v2ray-geodata/d' feeds.conf 2>/dev/null || true
 
-# Add the feed
-cat >> feeds.conf << 'FEED'
+cat >> feeds.conf <<'FEED'
 src-git daede https://github.com/kenzok8/openwrt-daede.git;main
+src-git mosdns https://github.com/sbwml/luci-app-mosdns.git;v5
+src-git geodata https://github.com/sbwml/v2ray-geodata.git;master
 FEED
 
-echo ""
-echo "feeds.conf content:"
+echo "=== feeds.conf ==="
 cat feeds.conf
-
-echo ""
-echo "=========================================="
-echo "  Updating feeds..."
-echo "=========================================="
+echo "=== Updating feeds ==="
 ./scripts/feeds update -a
-
-echo ""
-echo "=========================================="
-echo "  Installing feeds..."
-echo "=========================================="
-
-# Install kenzok8's dae/daed/luci-app-daede
-./scripts/feeds install -a
+echo "=== Installing required custom packages ==="
 ./scripts/feeds install dae daed luci-app-daede
+./scripts/feeds install mosdns luci-app-mosdns geo2txt
+./scripts/feeds install v2ray-geoip v2ray-geosite
 
-echo ""
-echo "=========================================="
-echo "  Feed setup complete!"
-echo "=========================================="
-echo ""
-echo "Available daede packages:"
-find feeds/daede -name "Makefile" -exec dirname {} \; 2>/dev/null | while read dir; do
-  pkg=$(basename "$dir")
-  echo "  - $pkg"
-done | sort -u
+echo "=== Custom feeds ready ==="
+for pkg in dae daed luci-app-daede mosdns luci-app-mosdns geo2txt v2ray-geoip v2ray-geosite; do
+  if [ -f "package/feeds/daede/$pkg/Makefile" ] ||      [ -f "package/feeds/mosdns/$pkg/Makefile" ] ||      [ -f "package/feeds/geodata/$pkg/Makefile" ]; then
+    echo "  ✓ $pkg"
+  else
+    echo "  ❌ $pkg"
+    exit 1
+  fi
+done
