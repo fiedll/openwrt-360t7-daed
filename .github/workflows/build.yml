@@ -75,13 +75,11 @@ jobs:
           echo "## ImmortalWrt commit" >> $GITHUB_STEP_SUMMARY
           echo "$(git log -1 --format='%H %ci %s')" >> $GITHUB_STEP_SUMMARY
 
-      - name: Update and install feeds
+      - name: Setup custom feeds
         run: |
           cd openwrt
           cp feeds.conf.default feeds.conf
-          cat feeds.conf
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
+          bash ${{ github.workspace }}/scripts/setup-feeds.sh openwrt
 
       - name: Copy pre-configured files into build tree
         run: |
@@ -119,6 +117,16 @@ jobs:
           grep -q "CONFIG_PACKAGE_luci-app-statistics=y" .config || { echo "❌ statistics missing!"; FAIL=1; }
           echo "=== adblock-fast ==="
           grep -q "CONFIG_PACKAGE_luci-app-adblock-fast=y" .config || { echo "❌ adblock-fast missing!"; FAIL=1; }
+          echo "=== daed ==="
+          grep -q "CONFIG_PACKAGE_daed=y" .config || { echo "❌ daed missing!"; FAIL=1; }
+          echo "=== dae ==="
+          grep -q "CONFIG_PACKAGE_dae=y" .config || { echo "❌ dae missing!"; FAIL=1; }
+          echo "=== MosDNS ==="
+          grep -q "CONFIG_PACKAGE_mosdns=y" .config || { echo "❌ mosdns missing!"; FAIL=1; }
+          grep -q "CONFIG_PACKAGE_luci-app-mosdns=y" .config || { echo "❌ luci-app-mosdns missing!"; FAIL=1; }
+          echo "=== Tailscale ==="
+          grep -q "CONFIG_PACKAGE_tailscale=y" .config || { echo "❌ tailscale missing!"; FAIL=1; }
+          grep -q "CONFIG_PACKAGE_kmod-tun=y" .config || { echo "❌ kmod-tun missing!"; FAIL=1; }
           echo "=== BTF kernel ==="
           grep -rq "CONFIG_DEBUG_INFO=y" target/linux/*/config-* 2>/dev/null || echo "⚠️ CONFIG_DEBUG_INFO not in kernel config"
           grep -rq "CONFIG_DEBUG_INFO_BTF=y" target/linux/*/config-* 2>/dev/null || echo "⚠️ CONFIG_DEBUG_INFO_BTF not in kernel config"
